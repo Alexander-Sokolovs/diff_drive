@@ -8,6 +8,7 @@ from geometry_msgs.msg import Twist, PoseStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32, Bool
 import actionlib
+import time
 
 from diff_drive import goal_controller
 from diff_drive import pose
@@ -49,9 +50,11 @@ class GoToGoalNode:
         self.dT = 1 / rate
 
         self.kP = rospy.get_param('~kP', 3.0)
+        self.kI = rospy.get_param('~kI', 0)
+        self.kD = rospy.get_param('~kD', 0)
         self.kA = rospy.get_param('~kA', 8.0)
         self.kB = rospy.get_param('~kB', -1.5)
-        self.controller.set_constants(self.kP, self.kA, self.kB)
+        self.controller.set_constants(self.kP,self.kI,self.kD, self.kA, self.kB)
 
         self.controller.set_linear_tolerance(
             rospy.get_param('~linear_tolerance', 0.05))
@@ -95,6 +98,7 @@ class GoToGoalNode:
             self.controller.set_min_linear_speed(0.05)
             
         success = True
+        self.controller.time_prev=time.time_ns()
         while not rospy.is_shutdown() and self.goal is not None:
             # Allow client to preempt the goal.
             if self.action_server.is_preempt_requested():
@@ -139,6 +143,7 @@ class GoToGoalNode:
         # Forget the goal if achieved.
         if self.controller.at_goal(self.pose, self.goal):
             rospy.loginfo('Goal achieved')
+            self.controller.integral=0
             self.goal = None
             msg = Bool()
             msg.data = True

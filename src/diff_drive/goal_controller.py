@@ -1,7 +1,9 @@
 from __future__ import division, print_function
 from math import pi, sqrt, sin, cos, atan2
 from diff_drive.pose import Pose
-#import rospy
+import time
+
+import rospy
 
 class GoalController:
     """Finds linear and angular velocities necessary to drive toward
@@ -10,6 +12,12 @@ class GoalController:
 
     def __init__(self):
         self.kP = 3
+        self.kI = 0
+        self.kD = 0
+        self.time=0
+        self.time_prev=time.time_ns()
+        self.integral=0
+        self.d_prev=0
         self.kA = 8
         self.kB = -1.5
         self.max_linear_speed = 1E9
@@ -22,8 +30,10 @@ class GoalController:
         self.angular_tolerance = 3/180*pi # 3 degrees
         self.forward_movement_only = False
 
-    def set_constants(self, kP, kA, kB):
+    def set_constants(self, kP,kI,kD, kA, kB):
         self.kP = kP
+        self.kI = kI
+        self.kD = kD
         self.kA = kA
         self.kB = kB
 
@@ -98,9 +108,21 @@ class GoalController:
         if abs(d) < self.linear_tolerance:
             desired.xVel = 0
             desired.thetaVel = self.kB * theta
-        else:
-            desired.xVel = self.kP * d * direction
+
+        else: #Execute PID
+            self.time=time.time_ns()
+            dt=(self.time-self.time_prev)/1E6
+            self.integral+=self.kI*d*dt
+
+            derivative=self.kD*(d-self.d_prev)/dt
+            proportional=(self.kP * d)
+            desired.xVel = ( proportional+ self.integral + derivative) * direction
+            rospy.loginfo("PID P%f2.4 I%f2.4 D%f2.4 E%f2.4 dT%f2.4", proportional,self.integral,derivative,d,dt)
+            
+            
             desired.thetaVel = self.kA*a + self.kB*b
+            self.d_prev=d
+            self.time_prev=self.time
 
         # Adjust velocities if X velocity is too high.
         if abs(desired.xVel) > self.max_linear_speed:
