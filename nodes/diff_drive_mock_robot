@@ -15,13 +15,21 @@ class MockRobotNode:
         self.robot = mock_robot.MockRobot()
         self.leftSpeed = 0
         self.rightSpeed = 0
+        try:
+            self.sim_mode = rospy.get_param("/sim")
+        except:
+            print("Could not read sim param")
+            self.sim_mode = False
 
     def main(self):
         rospy.init_node('diff_drive_mock_robot')
-        self.leftPub = rospy.Publisher('~lwheel_ticks',
-                                       Int32, queue_size=10)
-        self.rightPub = rospy.Publisher('~rwheel_ticks',
+        # try:
+            # rospy.get_params)
+        if self.sim_mode:
+            self.leftPub = rospy.Publisher('~lwheel_ticks',
                                         Int32, queue_size=10)
+            self.rightPub = rospy.Publisher('~rwheel_ticks',
+                                            Int32, queue_size=10)
 
         self.nodeName = rospy.get_name()
         rospy.loginfo("{0} started".format(self.nodeName))
@@ -52,8 +60,9 @@ class MockRobotNode:
         except:
             rospy.logerror("Got exception updating robot")
         ticks = self.robot.getTicks()
-        self.leftPub.publish(ticks.left)
-        self.rightPub.publish(ticks.right)
+        if self.sim_mode:
+            self.leftPub.publish(ticks.left)
+            self.rightPub.publish(ticks.right)
 
     def leftCallback(self, leftSpeed):
         self.leftSpeed = leftSpeed.data

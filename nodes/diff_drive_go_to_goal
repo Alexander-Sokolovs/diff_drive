@@ -152,6 +152,11 @@ class GoToGoalNode:
         self.action_client.wait_for_server()
         action_goal = GoToPoseGoal()
         action_goal.pose.pose = goal.pose
+        if goal.transit:
+            self.controller.set_min_linear_speed(0.2)
+        else:
+            self.controller.set_min_linear_speed(0.05)
+
         self.action_client.send_goal(action_goal)
 
     def get_angle_pose(self, quaternion_pose):

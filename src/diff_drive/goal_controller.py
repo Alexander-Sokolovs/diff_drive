@@ -127,6 +127,7 @@ class GoalController:
             desired.xVel *= ratio
             desired.thetaVel *= ratio
 
+        print(desired)
         return desired
 
     def normalize_half_pi(self, alpha):

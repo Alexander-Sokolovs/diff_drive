@@ -73,7 +73,7 @@ class Odometry:
         self.lastTime = newTime
 
     def getPose(self):
-        return self.pose;
+        return self.pose
 
     def setPose(self, newPose):
         self.pose = newPose
