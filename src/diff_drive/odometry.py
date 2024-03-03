@@ -13,6 +13,8 @@ class Odometry:
         self.rightEncoder = Encoder()
         self.pose = Pose()
         self.lastTime = 0
+        self.last_imu_yaw = 0 
+        self.curr_imu_yaw = 0
 
     def setWheelSeparation(self, separation):
         self.wheelSeparation = separation
@@ -33,6 +35,9 @@ class Odometry:
     def updateRightWheel(self, newCount):
         self.rightEncoder.update(newCount)
 
+    def update_imu(self, new_state):
+        self.curr_imu_yaw = new_state
+
     def updatePose(self, newTime):
         """Updates the pose based on the accumulated encoder ticks
         of the two wheels. See https://chess.eecs.berkeley.edu/eecs149/documentation/differentialDrive.pdf
@@ -43,7 +48,13 @@ class Odometry:
         deltaTime = newTime - self.lastTime
 
         deltaTravel = (rightTravel + leftTravel) / 2
+        
+        deltaIMU = self.curr_imu_yaw - self.last_imu_yaw
+
         deltaTheta = (rightTravel - leftTravel) / self.wheelSeparation
+
+
+        deltaTheta = (deltaTheta + deltaIMU)/2
 
         if rightTravel == leftTravel:
             deltaX = leftTravel*cos(self.pose.theta)
@@ -65,12 +76,14 @@ class Odometry:
 
         self.pose.x += deltaX
         self.pose.y += deltaY
-        self.pose.theta = (self.pose.theta + deltaTheta) % (2*pi)
+        self.pose.theta = (self.pose.theta + deltaTheta) % (2*pi) ## integrate imu yaw here 
         self.pose.xVel = deltaTravel / deltaTime if deltaTime > 0 else 0.
         self.pose.yVel = 0
         self.pose.thetaVel = deltaTheta / deltaTime if deltaTime > 0 else 0.
 
         self.lastTime = newTime
+        self.last_imu_yaw = self.curr_imu_yaw
+
 
     def getPose(self):
         return self.pose

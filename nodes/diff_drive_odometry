@@ -5,7 +5,7 @@ import rospy
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String, Float32
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from tf.broadcaster import TransformBroadcaster
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
@@ -30,6 +30,8 @@ class OdometryNode:
         rospy.Subscriber("rwheel_ticks", Int32, self.rightCallback)
         rospy.Subscriber("initialpose", PoseWithCovarianceStamped,
                          self.on_initial_pose)
+    
+        rospy.Subscriber("/hardware/imu", Float32, self.imu_cb)
 
         self.ticksPerMeter = int(rospy.get_param('~ticks_per_meter'))
         self.wheelSeparation = float(rospy.get_param('~wheel_separation'))
@@ -97,6 +99,10 @@ class OdometryNode:
 
     def rightCallback(self, msg):
         self.odometry.updateRightWheel(msg.data)
+
+
+    def imu_cb(self, msg):
+        self.odometry.update_imu(msg.data)
 
 
 if __name__ == '__main__':
