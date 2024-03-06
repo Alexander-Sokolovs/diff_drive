@@ -1,6 +1,7 @@
 from __future__ import division
 
 
+
 class Encoder:
     """Monitors a single wheel encoder and accumulates delta ticks
     since the last time they were requested.
