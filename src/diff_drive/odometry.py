@@ -15,6 +15,9 @@ class Odometry:
         self.lastTime = 0
         self.last_imu_yaw = 0 
         self.curr_imu_yaw = 0
+        self.first = True
+
+        self.motor_theta = 0
 
     def setWheelSeparation(self, separation):
         self.wheelSeparation = separation
@@ -37,6 +40,9 @@ class Odometry:
 
     def update_imu(self, new_state):
         self.curr_imu_yaw = new_state
+        if self.first:
+            self.last_imu_yaw = self.curr_imu_yaw
+            self.first = False
 
     def updatePose(self, newTime):
         """Updates the pose based on the accumulated encoder ticks
@@ -49,12 +55,13 @@ class Odometry:
 
         deltaTravel = (rightTravel + leftTravel) / 2
         
-        deltaIMU = self.curr_imu_yaw - self.last_imu_yaw
+        # deltaIMU = self.curr_imu_yaw - self.last_imu_yaw
 
         deltaTheta = (rightTravel - leftTravel) / self.wheelSeparation
 
 
-        deltaTheta = (deltaTheta + deltaIMU)/2
+        # deltaTheta = (deltaTheta + deltaIMU)/2
+
 
         if rightTravel == leftTravel:
             deltaX = leftTravel*cos(self.pose.theta)
@@ -74,13 +81,20 @@ class Odometry:
                 + cos(deltaTheta)*(self.pose.y - iccY) \
                 + iccY - self.pose.y
 
+
+        self.motor_theta = (self.motor_theta + deltaTheta) % (2*pi)
+
         self.pose.x += deltaX
         self.pose.y += deltaY
-        self.pose.theta = (self.pose.theta + deltaTheta) % (2*pi) ## integrate imu yaw here 
+        self.pose.theta = (self.motor_theta + self.curr_imu_yaw)/2
         self.pose.xVel = deltaTravel / deltaTime if deltaTime > 0 else 0.
         self.pose.yVel = 0
         self.pose.thetaVel = deltaTheta / deltaTime if deltaTime > 0 else 0.
 
+        # self.debug = (self.pose.theta + self.curr_imu_yaw)/2
+        # print("Motor: "+str(self.motor_theta) +" IMU: "+str(self.curr_imu_yaw) + " Total: " + str(self.pose.theta))
+        # self.pose.theta = self.debug
+        
         self.lastTime = newTime
         self.last_imu_yaw = self.curr_imu_yaw
 

@@ -117,7 +117,7 @@ class GoalController:
             derivative=self.kD*(d-self.d_prev)/dt
             proportional=(self.kP * d)
             desired.xVel = ( proportional+ self.integral + derivative) * direction
-            rospy.loginfo("PID P%f2.4 I%f2.4 D%f2.4 E%f2.4 dT%f2.4", proportional,self.integral,derivative,d,dt)
+            # rospy.loginfo("PID P%f2.4 I%f2.4 D%f2.4 E%f2.4 dT%f2.4", proportional,self.integral,derivative,d,dt)
             
             
             desired.thetaVel = self.kA*a + self.kB*b
