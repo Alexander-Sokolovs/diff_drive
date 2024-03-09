@@ -43,6 +43,15 @@ class Odometry:
         if self.first:
             self.last_imu_yaw = self.curr_imu_yaw
             self.first = False
+            
+    def sensor_fusion(self,imu_theta,motor_theta, imu_weight):
+        if abs(imu_theta-motor_theta)>5:#one is close to 0deg and the other one is close 360deg
+            if imu_theta>motor_theta:
+                motor_theta+=(2*pi)
+            else:
+                imu_theta+=(2*pi)
+        angle= imu_weight*(imu_theta)+((1-imu_weight)*motor_theta)
+        return angle % (2*pi)
 
     def updatePose(self, newTime):
         """Updates the pose based on the accumulated encoder ticks
@@ -86,13 +95,13 @@ class Odometry:
 
         self.pose.x += deltaX
         self.pose.y += deltaY
-        self.pose.theta = (self.motor_theta + self.curr_imu_yaw)/2
+        self.pose.theta = self.sensor_fusion(self.curr_imu_yaw,self.motor_theta,0.7)
         self.pose.xVel = deltaTravel / deltaTime if deltaTime > 0 else 0.
         self.pose.yVel = 0
         self.pose.thetaVel = deltaTheta / deltaTime if deltaTime > 0 else 0.
 
         # self.debug = (self.pose.theta + self.curr_imu_yaw)/2
-        # print("Motor: "+str(self.motor_theta) +" IMU: "+str(self.curr_imu_yaw) + " Total: " + str(self.pose.theta))
+        print(str(self.motor_theta) +","+str(self.curr_imu_yaw) + "," + str(self.pose.theta))
         # self.pose.theta = self.debug
         
         self.lastTime = newTime
