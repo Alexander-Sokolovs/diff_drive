@@ -1,6 +1,7 @@
 # goal definition
 geometry_msgs/PoseStamped pose
 bool transit
+bool backward
 ---
 # result definition
 bool success

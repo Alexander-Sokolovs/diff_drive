@@ -96,6 +96,8 @@ class GoToGoalNode:
             self.controller.set_min_linear_speed(0.2)
         else:
             self.controller.set_min_linear_speed(0.05)
+
+        self.controller.set_forward_movement_only(not goal.backward)
             
         success = True
         self.controller.time_prev=time.time_ns()
