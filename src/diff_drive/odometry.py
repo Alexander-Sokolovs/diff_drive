@@ -95,7 +95,7 @@ class Odometry:
 
         self.pose.x += deltaX
         self.pose.y += deltaY
-        self.pose.theta = self.sensor_fusion(self.curr_imu_yaw,self.motor_theta,1)
+        self.pose.theta = self.sensor_fusion(self.curr_imu_yaw,self.motor_theta,0)
         self.pose.xVel = deltaTravel / deltaTime if deltaTime > 0 else 0.
         self.pose.yVel = 0
         self.pose.thetaVel = deltaTheta / deltaTime if deltaTime > 0 else 0.

@@ -3,7 +3,7 @@ from __future__ import division
 
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Bool
 
 from diff_drive import controller
 
@@ -13,6 +13,9 @@ class ControllerNode:
         self.controller = controller.Controller()
         self.linearVelocity = 0.0
         self.angularVelocity = 0.0
+
+        self.ultrasound_ok = True
+        self.stopping_factor = 0
 
     def main(self):
         self.leftPub = rospy.Publisher('lwheel_desired_rate',
@@ -25,6 +28,8 @@ class ControllerNode:
         rospy.loginfo("{0} started".format(self.nodeName))
 
         rospy.Subscriber("cmd_vel", Twist, self.twistCallback)
+
+        rospy.Subscriber("/hardware/ultrasound", Bool, self.ultrasound_cb)
 
         self.ticksPerMeter = float(rospy.get_param('~ticks_per_meter'))
         self.wheelSeparation = float(rospy.get_param('~wheel_separation'))
@@ -39,8 +44,29 @@ class ControllerNode:
         rate = rospy.Rate(self.rate)
         self.lastTwistTime = rospy.get_time()
         while not rospy.is_shutdown():
+            self.adjust_max_speed()
             self.publish()
             rate.sleep()
+
+    def ultrasound_cb(self, msg):
+        if msg.data != self.ultrasound_ok:
+            self.ultrasound_ok = msg.data
+
+
+    def adjust_max_speed(self):
+        if not self.ultrasound_ok and self.stopping_factor > 0:
+            self.stopping_factor -= 0.1
+
+        elif self.ultrasound_ok and self.stopping_factor < 1:
+            self.stopping_factor += 0.1
+
+        if self.stopping_factor < 0:
+             self.stopping_factor = 0
+        
+        elif self.stopping_factor > 1:
+             self.stopping_factor = 1
+
+        self.controller.setMaxMotorSpeed(self.maxMotorSpeed*self.stopping_factor)
 
     def publish(self):
         if rospy.get_time() - self.lastTwistTime < self.timeout:
